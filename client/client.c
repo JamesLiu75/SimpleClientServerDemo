@@ -21,10 +21,12 @@ static client_t client;
 static bool
 save_to_file (FILE *fp, char *buffer, int bytes_to_write)
 {
-  int write_bytes = fwrite (buffer, bytes_to_write,1, fp);
+  log_debug("%s",__func__);
+
+  int write_bytes = fwrite (buffer, 1, bytes_to_write, fp);
   while (write_bytes < bytes_to_write)
     {
-      int bytes = fwrite (buffer, bytes_to_write - write_bytes,1, fp);
+      int bytes = fwrite (buffer+write_bytes, 1, bytes_to_write - write_bytes,fp);
       write_bytes += bytes;
     }
 
@@ -36,7 +38,7 @@ static bool
 download_file_data_block_and_save_to_file (FILE *fp, int block_size)
 {
   char *buffer = malloc (block_size);
-  if (buffer)
+  if (buffer == NULL)
     {
       log_error ("Fail to allocate memory");
       return false;
@@ -60,7 +62,7 @@ download_file_data_block_and_save_to_file (FILE *fp, int block_size)
   while (received_bytes < block_size)
     {
       int bytes = client.tran->recv (buffer, block_size - received_bytes);
-      if((bytes == 0) || !save_to_file(fp, buffer, received_bytes)){
+      if((bytes == 0) || !save_to_file(fp, buffer, bytes)){
         log_error ("Socket is broken or fail to save data into file");
         free (buffer);
         return false;
@@ -76,7 +78,7 @@ get_transfer_message_length ()
 {
   int message_header_size = sizeof (message_header_t);
   char *buffer = malloc (message_header_size);
-  if (buffer)
+  if (buffer == NULL)
     {
       log_error ("Fail to allocate memory for message header");
       return 0;
@@ -131,7 +133,7 @@ client_init (client_transport_t *transport, char *folder)
 }
 
 bool
-connect (void)
+client_connect (void)
 {
   if (is_inited)
     {
@@ -246,7 +248,7 @@ get_file_size_from_server (char filename[])
 }
 
 bool
-download (char filename[], char *folder)
+client_download (char filename[], char *folder)
 {
   if (!is_inited)
     {
@@ -320,14 +322,15 @@ download (char filename[], char *folder)
 }
 
 void
-disconnect ()
+client_disconnect ()
 {
   if (is_inited)
     {
       client.tran->discon ();
-    }
+    }else {
 
   log_error ("Not initialized");
+    }
 }
 
 void

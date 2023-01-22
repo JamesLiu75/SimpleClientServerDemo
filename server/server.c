@@ -155,7 +155,7 @@ static error_code_t reply_transfer_file_request_message(int client_id,char* file
     }
 
     char data_block[TRANSFER_FILE_BLOCK_SIZE];
-    size_t read_bytes = fread(data_block, TRANSFER_FILE_BLOCK_SIZE, 1, fp);
+    size_t read_bytes = fread(data_block, 1, TRANSFER_FILE_BLOCK_SIZE, fp);
     while(read_bytes > 0) {
         /*Assemble message and send the data to client*/
         error_code_t error = send_transfer_message(client_id, data_block, read_bytes);
@@ -164,7 +164,7 @@ static error_code_t reply_transfer_file_request_message(int client_id,char* file
             return error;
         }
         /*Read the next data block*/
-        read_bytes = fread(data_block, TRANSFER_FILE_BLOCK_SIZE, 1, fp);
+        read_bytes = fread(data_block, 1 , TRANSFER_FILE_BLOCK_SIZE, fp);
     }
 
     fclose(fp);
@@ -233,7 +233,7 @@ static error_code_t get_message_header(int client_id,message_header_t* header, u
     log_info("Got message header, message id[0x%x], message length[%d]",message_id, message_length);
     
     header->message_id = message_id;
-    header->payload_length = message_length;
+    header->message_length = message_length;
 
     return NO_ERROR;
 }
@@ -253,7 +253,7 @@ static error_code_t wait_and_handle_message(int client_id){
             {
                 char filename[MAX_FILE_WITH_PATH];
                 memset(filename,0,MAX_FILE_WITH_PATH);
-                uint32_t filename_length = message_header->payload_length;
+                uint32_t filename_length = message_header->message_length - sizeof(message_header_t);
                  error = get_requested_filename(client_id,filename,filename_length);
                  if(error == NO_ERROR){
                      error = reply_file_size_request_message(client_id,filename);
@@ -265,7 +265,7 @@ static error_code_t wait_and_handle_message(int client_id){
             {
                 char filename[MAX_FILE_WITH_PATH];
                 memset(filename,0,MAX_FILE_WITH_PATH);
-                uint32_t filename_length = message_header->payload_length;
+                uint32_t filename_length = message_header->message_length - sizeof(message_header_t);
                 error = get_requested_filename(client_id, filename,filename_length);
                 if(error == NO_ERROR){
                     error = reply_transfer_file_request_message(client_id,filename);

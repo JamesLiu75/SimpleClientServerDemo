@@ -7,7 +7,7 @@
 typedef struct
 {
   uint32_t message_id;
-  uint32_t payload_length;
+  uint32_t message_length;
 } __attribute__ ((__packed__)) message_header_t;
 
 typedef struct

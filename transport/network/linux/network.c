@@ -124,7 +124,7 @@ network_server_listen (on_connect_t callback, uint32_t max_connection_num)
         }
 
       uint32_t index = find_empty_for_connection ();
-      if (index < SERVER_MAX_CONNECTION_NUM)
+      if (index >= SERVER_MAX_CONNECTION_NUM)
         {
           log_error ("No place available for the new connection");
           return false;
@@ -168,6 +168,7 @@ network_client_init (char *server_ip, uint32_t port)
       return false;
     }
 }
+
 bool
 network_client_connect ()
 {
@@ -182,14 +183,19 @@ network_client_connect ()
   if (status < 0)
     {
       log_error ("Couldn't connect with the server");
+      return false;
     }
+
+  return true;
 }
+
 bool
 network_client_disconnect ()
 {
   close (_client_socket_descriptor);
   return true;
 }
+
 int
 network_client_send (char *buffer, uint32_t buffer_len)
 {

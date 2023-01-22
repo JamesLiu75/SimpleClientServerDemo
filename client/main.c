@@ -20,7 +20,7 @@ int
 main (int argc, char **argv)
 {
   // TODO : use the short/long arguments
-  if (argc < 6)
+  if (argc < 5)
     {
       print_help (argv[0]);
       return -1;
@@ -47,8 +47,9 @@ main (int argc, char **argv)
       return -1;
     }
 
+  bool is_downloaded = false;
   if (network_client_init (server_ip, server_port)
-      || client_init (&network_client_transport, folder) || connect ())
+      && client_init (&network_client_transport, folder) && client_connect ())
     {
       uint32_t server_file_size = get_file_size_from_server (file);
       /*check if there is old file exist and the file size if it's*/
@@ -65,11 +66,14 @@ main (int argc, char **argv)
           size = get_file_size (fp);
         }
 
-      if (fp && size == server_file_size)
+      if (fp && (size == server_file_size))
         {
           log_info ("the old file has the same size as the one in the server");
           fclose (fp);
-          return -1;
+          client_disconnect ();
+          client_deinit ();
+          network_client_deinit ();
+          return 0;
         }
 
       if (fp != NULL)
@@ -87,13 +91,16 @@ main (int argc, char **argv)
             {
               log_error ("Fails to back up the old file");
               fclose (fp);
+              client_disconnect ();
+              client_deinit ();
+              network_client_deinit ();
               return -1;
             }
-        }
 
       fclose (fp);
-      bool is_downloaded = false;
-      if (download (file, folder))
+        }
+
+      if (client_download (file, folder))
         {
           log_info ("File %s has been downloaded successfully", file);
           remove (backup_file_with_path);
@@ -128,12 +135,10 @@ main (int argc, char **argv)
             }
         }
 
-      disconnect ();
-      client_deinit ();
-      network_client_deinit ();
-
-      return is_downloaded ? 0 : -1;
+      client_disconnect ();
     }
 
-  return -1;
+      client_deinit ();
+      network_client_deinit ();
+      return is_downloaded ? 0 : -1;
 }
