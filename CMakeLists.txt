@@ -4,6 +4,8 @@ project (SimpleClientServer)
 include (CTest)
 
 set(CMAKE_C_STANDARD 11)
+add_compile_options(-Wall -Walloc-zero  -Wnonnull -Wformat-overflow=2 -Wextra -Wpedantic -Werror -fsanitize=address)
+add_link_options(-fsanitize=address)
 
 find_program( BASH_PROGRAM bash)
 

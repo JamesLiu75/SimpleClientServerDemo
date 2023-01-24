@@ -34,7 +34,7 @@ static server_t server;
 static void init_connections(uint32_t max_connection_num){
     if(connections != NULL){
         pthread_mutex_lock(&mutex);
-        for(int i = 0; i < max_connection_num; i++){
+        for(uint32_t i = 0; i < max_connection_num; i++){
             connections[i].client_id = INVALID_CLIENT_ID;
             connections[i].is_valid = false;
         }
@@ -46,7 +46,7 @@ static connection_t* allocate_connection(int client_id){
     connection_t* connection = NULL;
     if(connections != NULL){
         pthread_mutex_lock(&mutex);
-        for(int i = 0; i < server.max_connections; i++){
+        for(uint32_t i = 0; i < server.max_connections; i++){
             if(connections[i].client_id == INVALID_CLIENT_ID) {
                 connection = &connections[i];
                 connection->client_id = client_id;
@@ -75,8 +75,8 @@ static error_code_t reply_file_size_request_message(int client_id,char* filename
     }
 
     char file_with_path[MAX_FILE_WITH_PATH];
-    strncpy(file_with_path, server.folder, MAX_FILE_WITH_PATH);
-    strcat(file_with_path, filename);
+    concatenate_strings(file_with_path, server.folder, filename, MAX_FILE_WITH_PATH);
+
     FILE *fp = fopen(file_with_path, "r");
     if(fp == NULL){
         log_error("Fail to open file %s", file_with_path);
@@ -104,7 +104,7 @@ static error_code_t reply_file_size_request_message(int client_id,char* filename
     memcpy(message + sizeof(message_header_t),(char *)&file_size, sizeof(file_size));
     int bytes_sent = server.tran->send(client_id,message, message_length);
     free(message);
-    if(bytes_sent != message_length){
+    if((uint32_t)bytes_sent != message_length){
       log_error("Fail to send message, return %d is not equal to message length(%d)",bytes_sent,message_length);
       return TRANSPORT_ERROR;
     }
@@ -132,7 +132,7 @@ static error_code_t send_transfer_message(int client_id, char* payload, uint32_t
     }
     int bytes_sent = server.tran->send(client_id,message, message_length);
     free(message);
-    if(bytes_sent != message_length){
+    if((uint32_t)bytes_sent != message_length){
       log_error("Fail to send message, return %d is not equal to message length(%d)",bytes_sent,message_length);
       return TRANSPORT_ERROR;
     }
@@ -146,8 +146,7 @@ static error_code_t reply_transfer_file_request_message(int client_id,char* file
     }
 
     char file_with_path[MAX_FILE_WITH_PATH];
-    strncpy(file_with_path, server.folder, MAX_FILE_WITH_PATH);
-    strcat(file_with_path, filename);
+    concatenate_strings(file_with_path, server.folder, filename, MAX_FILE_WITH_PATH);
     FILE *fp = fopen(file_with_path, "r");
     if(fp == NULL){
         log_error("Fail to open file %s", file_with_path);
@@ -179,7 +178,7 @@ static error_code_t get_requested_filename(int client_id,char* buffer, uint32_t 
       return TRANSPORT_ERROR;
     }
 
-    while(received_bytes < filename_len){
+    while((uint32_t)received_bytes < filename_len){
         int bytes = server.tran->recv(client_id,buffer+received_bytes, filename_len-received_bytes);
         if(bytes == 0){
           log_error("socket is broken");
@@ -211,7 +210,7 @@ static error_code_t get_message_header(int client_id,message_header_t* header, u
       return TRANSPORT_ERROR;
     }
 
-    while(received_bytes < message_header_size){
+    while((uint32_t)received_bytes < message_header_size){
         int bytes = server.tran->recv(client_id,message_header+received_bytes, message_header_size-received_bytes);
         if(bytes == 0){
           log_error("socket is broken");
@@ -299,6 +298,8 @@ static void * start_connection(void* ptr) {
    }else {
     log_error("Invalid parameter passed into the thread");
    }
+
+    return NULL;
 }
 
 static void on_connection(int client_id){
@@ -326,7 +327,8 @@ bool server_init(server_transport_t *transport, uint32_t max_connection_num, cha
   if(connections){
     init_connections(max_connection_num);
     server.tran = transport;
-    strncpy(server.folder, folder,MAX_FILE_WITH_PATH); 
+    strncpy(server.folder, folder,MAX_FILE_WITH_PATH);
+    server.folder[MAX_FILE_WITH_PATH - 1] = '\0';
     server.max_connections = max_connection_num;
     is_inited = true;
 

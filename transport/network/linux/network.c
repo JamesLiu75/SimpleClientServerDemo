@@ -68,7 +68,6 @@ bool
 network_server_init (uint32_t port)
 {
   _server_port = port;
-  int length_of_address;
   int option_value = 1;
   _socket_descriptor = socket (AF_INET, SOCK_STREAM, 0);
   if (_socket_descriptor < 0)
@@ -92,10 +91,10 @@ network_server_listen (on_connect_t callback, uint32_t max_connection_num)
 {
   _max_connection_num = max_connection_num;
   struct sockaddr_in server_address;
+  memset(&server_address,0,sizeof(server_address));
   server_address.sin_family = AF_INET;
   server_address.sin_port = htons (_server_port);
   server_address.sin_addr.s_addr = INADDR_ANY;
-  server_address.sin_zero[8] = '\0';
   int status = bind (_socket_descriptor, (struct sockaddr *)&server_address,
                      sizeof (struct sockaddr));
   if (status < 0)
@@ -134,6 +133,8 @@ network_server_listen (on_connect_t callback, uint32_t max_connection_num)
       /* call callback and provide the client socket*/
       callback (index);
     }
+
+    return false;
 }
 
 int
@@ -160,6 +161,7 @@ bool
 network_client_init (char *server_ip, uint32_t port)
 {
   strncpy (_client_connect_address, server_ip, MAX_SERVER_IPV4_ADDRESS_LEN);
+  _client_connect_address[MAX_SERVER_IPV4_ADDRESS_LEN - 1] = '\0';
   _client_connect_port = port;
   _client_socket_descriptor = socket (AF_INET, SOCK_STREAM, 0);
   if (_client_socket_descriptor < 0)
@@ -167,16 +169,18 @@ network_client_init (char *server_ip, uint32_t port)
       log_error ("Socket creation failed");
       return false;
     }
+
+    return true;
 }
 
 bool
 network_client_connect ()
 {
   struct sockaddr_in server_address;
+  memset(&server_address,0,sizeof(server_address));
   server_address.sin_family = AF_INET;
   server_address.sin_port = htons (_client_connect_port);
   server_address.sin_addr.s_addr = inet_addr (_client_connect_address);
-  server_address.sin_zero[8] = '\0';
   int status
       = connect (_client_socket_descriptor, (struct sockaddr *)&server_address,
                  sizeof (server_address));
