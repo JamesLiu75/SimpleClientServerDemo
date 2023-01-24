@@ -70,6 +70,7 @@ download_file_data_block_and_save_to_file (FILE *fp, int block_size)
           received_bytes += bytes;
     }
 
+  free (buffer);
   return true;
 }
 
@@ -116,11 +117,12 @@ get_transfer_message_length ()
   message_length = transport_to_host_long (message_length);
   log_info ("Got message header, message id[0x%x], message length[%d]",
             message_id, message_length);
+  
+  free (buffer);
   if (message_id == TRANSFER_DATA)
     {
       return message_length;
     }
-
   return 0;
 }
 
@@ -129,7 +131,10 @@ client_init (client_transport_t *transport, char *folder)
 {
   client.tran = transport;
   strncpy (client.folder, folder, MAX_FILE_WITH_PATH);
+  client.folder[MAX_FILE_WITH_PATH-1] = '\0';
   is_inited = true;
+
+  return true;
 }
 
 bool
@@ -172,7 +177,7 @@ get_file_size_from_server (char filename[])
           sizeof (transport_message_length));
   memcpy (message + sizeof (message_header_t), filename, strlen (filename));
   int bytes_sent = client.tran->send (message, message_length);
-  if (bytes_sent != message_length)
+  if ((uint32_t)bytes_sent != message_length)
     {
       log_error (
           "Fail to send message, return %d is not equal to message length(%d)",
@@ -206,7 +211,7 @@ get_file_size_from_server (char filename[])
       return 0;
     }
 
-  while (received_bytes < expected_response_message_len)
+  while ((uint32_t)received_bytes < expected_response_message_len)
     {
       int bytes
           = client.tran->recv (message + received_bytes,
@@ -276,7 +281,7 @@ client_download (char filename[], char *folder)
   memcpy (message + sizeof (message_header_t), filename, strlen (filename));
   int bytes_sent = client.tran->send (message, message_length);
   free (message);
-  if (bytes_sent != message_length)
+  if ((uint32_t)bytes_sent != message_length)
     {
       log_error (
           "Fail to send message, return %d is not equal to message length(%d)",
@@ -288,9 +293,7 @@ client_download (char filename[], char *folder)
    without payload, it means all data have been transfered.*/
 
   char file_to_save[MAX_FILE_WITH_PATH];
-  strncpy (file_to_save, folder, MAX_FILE_WITH_PATH);
-  strcat (file_to_save, filename);
-
+  concatenate_strings(file_to_save, folder, filename, MAX_FILE_WITH_PATH);
   FILE *fp = fopen (file_to_save, "w");
   if (fp == NULL)
     {

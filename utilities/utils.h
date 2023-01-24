@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 /*4096bytes for linux, 260 bytes for windows*/
 #define MAX_FILE_WITH_PATH 260
@@ -21,4 +22,6 @@ typedef enum
 void copy_file (FILE *src, FILE *dst);
 
 uint32_t get_file_size (FILE *fp);
+
+bool concatenate_strings(char* dst, char* src1, char* src2, uint32_t max_dst_buffer);
 #endif

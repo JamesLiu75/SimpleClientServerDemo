@@ -31,7 +31,7 @@ main (int argc, char **argv)
   char *file = argv[3];
   char *folder = argv[4];
 
-  int max_file_with_path_without_backup_suffix
+  uint32_t max_file_with_path_without_backup_suffix
       = (MAX_FILE_WITH_PATH - sizeof (BACKUP_SUFFIX));
   if((strlen (file) + strlen (folder))
    > max_file_with_path_without_backup_suffix)
@@ -56,8 +56,7 @@ main (int argc, char **argv)
 
       char file_with_path[MAX_FILE_WITH_PATH];
       char backup_file_with_path[MAX_FILE_WITH_PATH];
-      strncpy (file_with_path, folder, MAX_FILE_WITH_PATH);
-      strcat (file_with_path, file);
+      concatenate_strings(file_with_path, folder, file, MAX_FILE_WITH_PATH);
       FILE *fp = fopen (file_with_path, "r");
       uint32_t size = 0;
       FILE * backup_fp = NULL;
@@ -79,10 +78,9 @@ main (int argc, char **argv)
       if (fp != NULL)
         {
           /* Back up current old file in case the download fails*/
-          strncpy (backup_file_with_path, file_with_path, MAX_FILE_WITH_PATH);
-          strcat (backup_file_with_path, ".org");
+          concatenate_strings(backup_file_with_path, file_with_path, BACKUP_SUFFIX, MAX_FILE_WITH_PATH);
           backup_fp = fopen (backup_file_with_path, "w");
-          if (backup_fp > 0)
+          if (backup_fp != NULL)
             {
               copy_file (fp, backup_fp);
               fclose (backup_fp);
@@ -111,10 +109,10 @@ main (int argc, char **argv)
           /*copy the backup file back*/
           bool result = false;
           backup_fp = fopen (backup_file_with_path, "r");
-          if (backup_fp > 0)
+          if (backup_fp != NULL)
             {
               fp = fopen (file_with_path, "w");
-              if (fp > 0)
+              if (fp != NULL)
                 {
                   copy_file (backup_fp, fp);
                   fclose (backup_fp);
