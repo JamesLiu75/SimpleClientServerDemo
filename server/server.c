@@ -31,6 +31,7 @@ typedef struct {
 static connection_t* connections = NULL;
 static server_t server;
 
+/* All local functions rely on the caller to pass valid parameters to avoid unneccessary checking. */
 static void init_connections(uint32_t max_connection_num){
     if(connections != NULL){
         pthread_mutex_lock(&mutex);
@@ -70,9 +71,6 @@ static void free_connection(connection_t *connection){
 }
 
 static error_code_t reply_file_size_request_message(int client_id,char* filename){
-    if(filename == NULL){
-        return NULL_POINTER;
-    }
 
     char file_with_path[MAX_FILE_WITH_PATH];
     concatenate_strings(file_with_path, server.folder, filename, MAX_FILE_WITH_PATH);

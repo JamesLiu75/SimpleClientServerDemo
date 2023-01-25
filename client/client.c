@@ -18,6 +18,7 @@ typedef struct
 static bool is_inited = false;
 static client_t client;
 
+/* All local functions rely on the caller to pass valid parameters to avoid unneccessary checking. */
 static bool
 save_to_file (FILE *fp, char *buffer, int bytes_to_write)
 {
@@ -129,6 +130,11 @@ get_transfer_message_length ()
 bool
 client_init (client_transport_t *transport, char *folder)
 {
+  if((transport ==  NULL) || (folder == NULL)){
+    log_error("Invalid parameters");
+    return false;
+  }
+
   client.tran = transport;
   strncpy (client.folder, folder, MAX_FILE_WITH_PATH);
   client.folder[MAX_FILE_WITH_PATH-1] = '\0';
@@ -160,7 +166,7 @@ get_file_size_from_server (char filename[])
       return 0;
     }
 
-  /*Assemble message to get the file size from the server*/
+  /*Assemble the message to get the file size from the server*/
   uint32_t message_length = sizeof (message_header_t) + strlen (filename);
   char *message = malloc (message_length);
   if (message == NULL)
@@ -201,7 +207,6 @@ get_file_size_from_server (char filename[])
         }
     }
 
-  // waiting for the response message
   int received_bytes
       = client.tran->recv (message, expected_response_message_len);
   if (received_bytes == 0)

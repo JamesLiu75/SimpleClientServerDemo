@@ -25,7 +25,7 @@ server_transport_t network_server_transport
         .exit = network_server_exit };
 
 /* local variables for server*/
-static int _socket_descriptor;
+static int _socket_descriptor = -1;
 static struct sockaddr_in connection_address;
 static uint32_t _server_port;
 static uint32_t _max_connection_num;
@@ -89,6 +89,11 @@ network_server_init (uint32_t port)
 bool
 network_server_listen (on_connect_t callback, uint32_t max_connection_num)
 {
+  if(_socket_descriptor < 0){
+    log_error("invalid socket description");
+    return false;
+  }
+
   _max_connection_num = max_connection_num;
   struct sockaddr_in server_address;
   memset(&server_address,0,sizeof(server_address));
@@ -140,12 +145,22 @@ network_server_listen (on_connect_t callback, uint32_t max_connection_num)
 int
 network_server_send (int client_id, char *buffer, uint32_t buffer_len)
 {
+  if(_socket_descriptor < 0){
+    log_error("invalid socket description");
+    return false;
+  }
+
   return send (accepted_connects[client_id], buffer, buffer_len, 0);
 }
 
 int
 network_server_receive (int client_id, char *buffer, uint32_t buffer_len)
 {
+  if(_socket_descriptor < 0){
+    log_error("invalid socket description");
+    return false;
+  }
+
   return read (accepted_connects[client_id], buffer, buffer_len);
 }
 
@@ -153,7 +168,9 @@ void
 network_server_exit (void)
 {
   _is_running = false;
-  close (_socket_descriptor);
+  if(_socket_descriptor > 0){
+    close (_socket_descriptor);
+  }
   close_all_accepted_connections ();
 }
 
@@ -196,25 +213,39 @@ network_client_connect ()
 bool
 network_client_disconnect ()
 {
-  close (_client_socket_descriptor);
+  if(_client_socket_descriptor < 0){
+    close (_client_socket_descriptor);
+  }
+
   return true;
 }
 
 int
 network_client_send (char *buffer, uint32_t buffer_len)
 {
+  if(_client_socket_descriptor < 0){
+    log_error("invalid socket description");
+    return false;
+  }
+
   return send (_client_socket_descriptor, buffer, buffer_len, 0);
 }
 
 int
 network_client_receive (char *buffer, uint32_t buffer_len)
 {
+  if(_client_socket_descriptor < 0){
+    log_error("invalid socket description");
+    return false;
+  }
+
   return read (_client_socket_descriptor, buffer, buffer_len);
 }
 
 void
 network_client_deinit ()
 {
+  _client_socket_descriptor = -1;
 }
 
 uint32_t
@@ -222,6 +253,7 @@ host_to_transport_long (uint32_t host_long)
 {
   return htonl (host_long);
 }
+
 uint16_t
 host_to_transport_short (uint16_t host_short)
 {
@@ -233,6 +265,7 @@ transport_to_host_long (uint32_t transport_long)
 {
   return ntohl (transport_long);
 }
+
 uint16_t
 transport_to_host_short (uint16_t transport_short)
 {

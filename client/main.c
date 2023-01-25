@@ -19,7 +19,6 @@ print_help (char *program)
 int
 main (int argc, char **argv)
 {
-  // TODO : use the short/long arguments
   if (argc < 5)
     {
       print_help (argv[0]);
@@ -52,7 +51,10 @@ main (int argc, char **argv)
       && client_init (&network_client_transport, folder) && client_connect ())
     {
       uint32_t server_file_size = get_file_size_from_server (file);
-      /*check if there is old file exist and the file size if it's*/
+      /*check if there is old file exist and the file size is equal to the one in the server.
+        Note: need to use hash to check whether they are the same files.Currently, just check
+        the file size for demostration purpose.
+      */
 
       char file_with_path[MAX_FILE_WITH_PATH];
       char backup_file_with_path[MAX_FILE_WITH_PATH];

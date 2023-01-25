@@ -16,7 +16,6 @@ print_help (char *program)
 int
 main (int argc, char **argv)
 {
-  // TODO : use the short/long arguments
   if (argc < 4)
     {
       print_help (argv[0]);
